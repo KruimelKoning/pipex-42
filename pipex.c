@@ -6,7 +6,7 @@
 /*   By: lbartels <lbartels@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/12/08 17:23:47 by lbartels      #+#    #+#                 */
-/*   Updated: 2023/12/08 18:18:30 by lbartels      ########   odam.nl         */
+/*   Updated: 2024/01/16 13:24:34 by lbartels      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 void	child_process(int *fd, char **argv, char **env)
 {
-	int file_in;
+	int	file_in;
 
 	close(fd[0]);
 	file_in = open(argv[1], O_RDONLY);
@@ -22,7 +22,8 @@ void	child_process(int *fd, char **argv, char **env)
 	{
 		ft_putstr_fd(RED, 2);
 		perror("Error opening file");
-		exit(1);
+		ft_putstr_fd(WHITE, 2);
+		exit(EXIT_FAILURE);
 	}
 	dup2(file_in, STDIN_FILENO);
 	dup2(fd[1], STDOUT_FILENO);
@@ -41,7 +42,8 @@ void	parent_process(int *fd, char **argv, char **env)
 	{
 		ft_putstr_fd(RED, 2);
 		perror("Error opening file");
-		return ;
+		ft_putstr_fd(WHITE, 2);
+		exit(EXIT_FAILURE);
 	}
 	dup2(file_out, STDOUT_FILENO);
 	dup2(fd[0], STDIN_FILENO);
@@ -50,28 +52,32 @@ void	parent_process(int *fd, char **argv, char **env)
 	execute(argv[3], env);
 }
 
-int main(int argc, char **argv, char **env)
+int	main(int argc, char **argv, char **env)
 {
-	int	fd[2];
-	pid_t p_id;
+	int		fd[2];
+	pid_t	p_id;
+	pid_t	p_id2;
+	int		status;
 
-	if (argc == 5)
-	{
-		pipe(fd);
-		p_id = fork();
-		if (p_id == 0)
-			child_process(fd, argv, env);
-		waitpid(p_id, NULL, 0);
-		parent_process(fd, argv, env);
-	}
+	if (argc < 5)
+		ft_exit(1);
+	if (argc > 5)
+		ft_exit(2);
+	pipe(fd);
+	p_id = fork();
+	if (!p_id)
+		child_process(fd, argv, env);
 	else
 	{
-		ft_putstr_fd(YELLOW, 2);
-		if (argc > 5)
-			perror("Too many arguments");
-		if (argc < 5)
-			perror("Too few arguments");
-		exit(1);
+		p_id2 = fork();
+		if (!p_id2)
+			parent_process(fd, argv, env);
+		else
+		{
+			waitpid(p_id, NULL, 0);
+			waitpid(p_id2, &status, 0);
+			exit(WEXITSTATUS(status));
+		}
 	}
 	return (0);
 }
