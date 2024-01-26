@@ -10,10 +10,12 @@ RM = rm -rf
 
 SRC = 	pipex.c \
 		pipex_utils.c \
+		free_open.c \
 		libft/libft.a
 
 SRCB = 	pipex_bonus.c \
 		pipex_utils.c \
+		free_open.c \
 		libft/libft.a
 
 $(NAME) :

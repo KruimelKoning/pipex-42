@@ -6,29 +6,19 @@
 /*   By: lbartels <lbartels@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/12/11 15:10:20 by lbartels      #+#    #+#                 */
-/*   Updated: 2024/01/16 13:31:24 by lbartels      ########   odam.nl         */
+/*   Updated: 2024/01/24 16:33:21 by lbartels      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-int	open_file(char *file, char flag)
+void	fill_vars(t_bonus_vars *vars, int argc, char **argv)
 {
-	int	fd;
-
-	if (flag == 'i')
-		fd = open(file, O_RDONLY);
-	if (flag == 'o')
-		fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (flag == 'h')
-		fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0777);
-	if (fd == -1)
-	{
-		ft_putstr_fd(RED, 2);
-		perror("Error opening file");
-		exit(EXIT_FAILURE);
-	}
-	return (fd);
+	vars->file_out = open_file(argv[argc - 1], 'o');
+	vars->file_in = open_file(argv[1], 'i');
+	dup2(vars->file_in, STDIN_FILENO);
+	close(vars->file_in);
+	vars->i = 2;
 }
 
 static void	get_here_doc(int *fd, char *argv)
@@ -50,7 +40,7 @@ static void	get_here_doc(int *fd, char *argv)
 	}
 }
 
-void	here_doc(char **argv)
+void	here_doc(char **argv, int argc, t_bonus_vars *vars)
 {
 	int		fd[2];
 	pid_t	p_id;
@@ -71,6 +61,8 @@ void	here_doc(char **argv)
 		close(fd[0]);
 		wait(NULL);
 	}
+	vars->file_out = open_file(argv[argc - 1], 'h');
+	vars->i = 3;
 }
 
 void	ft_pipe(char *argv, char **env)
@@ -89,6 +81,7 @@ void	ft_pipe(char *argv, char **env)
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
 		execute(argv, env);
+		exit(EXIT_SUCCESS);
 	}
 	else
 	{
@@ -100,40 +93,26 @@ void	ft_pipe(char *argv, char **env)
 
 int	main(int argc, char **argv, char **env)
 {
-	int	i;
-	int	file_in;
-	int	file_out;
-	pid_t	p_id;
-	int	status;
+	t_bonus_vars	vars;
 
 	if (argc < 5 || (!ft_strncmp(argv[1], "here_doc", 8) && argc < 6))
 		ft_exit(1);
 	if (!ft_strncmp(argv[1], "here_doc", 8))
-	{
-		here_doc(argv);
-		file_out = open_file(argv[argc - 1], 'h');
-		i = 3;
-	}
+		here_doc(argv, argc, &vars);
 	else
+		fill_vars(&vars, argc, argv);
+	vars.p_id = fork();
+	if (!vars.p_id)
 	{
-		file_in = open_file(argv[1], 'i');
-		file_out = open_file(argv[argc - 1], 'o');
-		dup2(file_in, STDIN_FILENO);
-		close(file_in);
-		i = 2;
-	}
-	p_id = fork();
-	if (!p_id)
-	{
-		while (i < argc - 2)
-			ft_pipe(argv[i++], env);
-		dup2(file_out, STDOUT_FILENO);
+		while (vars.i < argc - 2)
+			ft_pipe(argv[vars.i++], env);
+		dup2(vars.file_out, STDOUT_FILENO);
 		execute(argv[argc - 2], env);
+		exit(EXIT_SUCCESS);
 	}
-	else
-	{
-		waitpid(p_id, &status, 0);
-		exit(WEXITSTATUS(status));
-	}
+	close(vars.file_in);
+	close(vars.file_out);
+	waitpid(vars.p_id, &vars.status, 0);
+	exit(WEXITSTATUS(vars.status));
 	return (0);
 }

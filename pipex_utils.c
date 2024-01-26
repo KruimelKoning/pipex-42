@@ -6,7 +6,7 @@
 /*   By: lbartels <lbartels@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/12/08 17:24:37 by lbartels      #+#    #+#                 */
-/*   Updated: 2024/01/16 11:24:49 by lbartels      ########   odam.nl         */
+/*   Updated: 2024/01/24 16:49:39 by lbartels      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,38 +14,22 @@
 
 void	ft_exit(int error)
 {
-	if (error == 1 || error == 2)
+	if (error == 1)
 	{
 		ft_putstr_fd(RED, 2);
 		ft_putstr_fd("ERROR: ", 2);
 		ft_putstr_fd(GREEN, 2);
-		if (error == 1)
-			ft_putstr_fd("Too few arguments\n", 2);
-		else
-			ft_putstr_fd("Too many arguments\n", 2);
+		ft_putstr_fd("Invalid arguments\n", 2);
 		ft_putstr_fd(WHITE, 2);
 		exit(EXIT_FAILURE);
 	}
-	if (error == 3)
+	if (error == 2)
 	{
 		ft_putstr_fd(RED, 2);
 		ft_putstr_fd("ERROR: empty argument\tpermission denied\n", 2);
 		ft_putstr_fd(WHITE, 2);
 		exit(126);
 	}
-}
-
-static void	ft_free_tab(char **tab)
-{
-	int	i;
-
-	i = 0;
-	while (tab[i])
-	{
-		free(tab[i]);
-		i++;
-	}
-	free(tab);
 }
 
 static char	*ft_getenv(char *name, char **env)
@@ -106,7 +90,7 @@ void	execute(char *cmd, char **env)
 	char	*path;
 
 	if (!cmd[0])
-		ft_exit(3);
+		ft_exit(2);
 	split_cmd = ft_split(cmd, ' ');
 	path = get_path(split_cmd[0], env);
 	if (!path)

@@ -6,7 +6,7 @@
 /*   By: lbartels <lbartels@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/12/08 17:23:47 by lbartels      #+#    #+#                 */
-/*   Updated: 2024/01/16 13:24:34 by lbartels      ########   odam.nl         */
+/*   Updated: 2024/01/24 16:35:45 by lbartels      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,28 +54,27 @@ void	parent_process(int *fd, char **argv, char **env)
 
 int	main(int argc, char **argv, char **env)
 {
-	int		fd[2];
-	pid_t	p_id;
-	pid_t	p_id2;
-	int		status;
+	int				fd[2];
+	int				status;
+	t_process_id	process;
 
-	if (argc < 5)
+	if (argc != 5)
 		ft_exit(1);
-	if (argc > 5)
-		ft_exit(2);
 	pipe(fd);
-	p_id = fork();
-	if (!p_id)
+	process.p_id = fork();
+	if (!process.p_id)
 		child_process(fd, argv, env);
 	else
 	{
-		p_id2 = fork();
-		if (!p_id2)
+		process.p_id2 = fork();
+		if (!process.p_id2)
 			parent_process(fd, argv, env);
 		else
 		{
-			waitpid(p_id, NULL, 0);
-			waitpid(p_id2, &status, 0);
+			close(fd[0]);
+			close(fd[1]);
+			waitpid(process.p_id, NULL, 0);
+			waitpid(process.p_id2, &status, 0);
 			exit(WEXITSTATUS(status));
 		}
 	}
